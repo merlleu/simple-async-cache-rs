@@ -26,7 +26,7 @@ impl<K: 'static + Eq + Hash + Debug + Sync + Send + Clone, V: 'static + Sync + S
     /// This limitaion exists because we expire value only every seconds, meaning there could be desynchronizations with a TTL lower than 3.
     pub fn new(expire: u64) -> Arc<Self> {
         if expire < 3 {
-            panic!("'expire' shouldn't be lower than 2.")
+            panic!("'expire' shouldn't be lower than 3.")
         }
 
         let a = Arc::new(AsyncCacheStore {
