@@ -2,6 +2,11 @@
 
 A fast asynchronous caching crate with expiration delay and custom types.
 
+## Links
+* [Repository](https://github.com/merlleu/simple-async-cache-rs)
+* [Documentation](https://docs.rs/simple-async-cache-rs)
+* [Crates.io](https://crates.io/crates/simple-async-cache-rs)
+
 ## Why would you use this crate ?
 * You can configure expiration delay
 * It supports almost any types / structs

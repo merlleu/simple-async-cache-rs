@@ -6,7 +6,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tokio::sync::Mutex;
 use tokio::time::sleep;
 
-pub struct InnerCacheLayer<K, V> {
+struct InnerCacheLayer<K, V> {
     pub map: HashMap<K, Arc<Mutex<Option<V>>>>,
     pub expiration_map: HashMap<u64, Vec<K>>,
 }
@@ -24,6 +24,24 @@ impl<K: 'static + Eq + Hash + Debug + Sync + Send + Clone, V: 'static + Sync + S
     /// **Panic**:
     /// If you set expire to less than 3 seconds. 
     /// This limitaion exists because we expire value only every seconds, meaning there could be desynchronizations with a TTL lower than 3.
+    /// 
+    /// 
+    /// 
+    /// ```rust
+    /// use simple_async_cache_rs::AsyncCacheStore;
+    /// 
+    /// 
+    /// 
+    /// #[tokio::main]
+    /// async fn main() {
+    ///     let cache_ttl = 60; // number of seconds before the cached item is expired.
+    ///     let store: AsyncCacheStore<u64, String> = AsyncCacheStore::new(cache_ttl);
+    ///     
+    /// 
+    /// }
+    /// 
+    /// 
+    /// ```
     pub fn new(expire: u64) -> Arc<Self> {
         if expire < 3 {
             panic!("'expire' shouldn't be lower than 3.")
@@ -68,8 +86,8 @@ impl<K: 'static + Eq + Hash + Debug + Sync + Send + Clone, V: 'static + Sync + S
 
 
     /// Fetch the key from the cache.
-    /// Returns an [`Arc`] to the [`Mutex`] for the key containing an Option.
-    /// The [`Mutex`] prevents DogPile effect.
+    /// Returns an [`std::sync::Arc`] to the [`tokio::sync::Mutex`] for the key containing an Option.
+    /// The [`tokio::sync::Mutex`] prevents DogPile effect.
     /// 
     /// ```rust
     /// let cache = store.get("key_1".to_string()).await;
