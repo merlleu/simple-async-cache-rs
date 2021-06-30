@@ -5,10 +5,10 @@ A fast asynchronous caching crate with expiration delay and custom types.
 ## Why would you use this crate ?
 * You can configure expiration delay
 * It supports almost any types / structs
-* It's really simple
+* It's really simple and written in pure Rust
 * It prevents [dogpile effect](https://www.sobstel.org/blog/preventing-dogpile-effect/)
 * Its only dependency is tokio.
-
+* It's threadsafe and fast
 
 ## Basic example:
 ```rs
