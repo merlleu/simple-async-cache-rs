@@ -18,10 +18,17 @@ pub struct AsyncCacheStore<K, V> {
 impl<K: 'static + Eq + Hash + Debug + Sync + Send + Clone, V: 'static + Sync + Send>
     AsyncCacheStore<K, V>
 {
+    /// Construct a new [`AsyncCacheStore`] instance.
+    /// Note: expire is the number of seconds for the cached value to expire.
     /// 
-    /// 
-    /// 
+    /// **Panic**:
+    /// If you set expire to less than 3 seconds. 
+    /// This limitaion exists because we expire value only every seconds, meaning there could be desynchronizations with a TTL lower than 3.
     pub fn new(expire: u64) -> Arc<Self> {
+        if expire < 3 {
+            panic!("'expire' shouldn't be lower than 2.")
+        }
+
         let a = Arc::new(AsyncCacheStore {
             inner: Mutex::new(InnerCacheLayer {
                 map: HashMap::new(),
@@ -59,6 +66,24 @@ impl<K: 'static + Eq + Hash + Debug + Sync + Send + Clone, V: 'static + Sync + S
         a
     }
 
+
+    /// Fetch the key from the cache.
+    /// Returns an [`Arc`] to the [`Mutex`] for the key containing an Option.
+    /// The [`Mutex`] prevents DogPile effect.
+    /// 
+    /// ```rust
+    /// let cache = store.get("key_1".to_string()).await;
+    /// let mut result = cache.lock().await;
+    /// match &mut *result {
+    ///     Some(val) => {
+    ///         // You can  get here the cached value for key_1 if it is already available.
+    ///     }
+    ///     None => {
+    ///         // There is no existing entry for key_1, you can do any expansive task to get the value and store it then.
+    ///         *result = Some("This is the content for key_1.");
+    ///     }
+    /// }
+    /// ```
     pub async fn get(&self, key: K) -> Arc<Mutex<Option<V>>> {
         let mut lock = self.inner.lock().await;
         let val = match lock.map.get(&key) {
