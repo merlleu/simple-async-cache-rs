@@ -3,11 +3,19 @@ name = "simple-async-cache-rs"
 version = "0.1.0"
 authors = ["merlleu <mrerl@warlegend.net>"]
 edition = "2018"
+include = [
+    "**/*.rs",
+    "Cargo.toml",
+]
+description = "A fast asynchronous caching crate with expiration delay and custom types."
+repository = "https://github.com/merlleu/simple-async-cache-rs"
+readme = "README.md"
+license = "MIT"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 tokio = {version = "1", features=["sync", "time", "rt"]}
 
 [dev.dependencies]
 tokio = {version = "1", features = ["full"]}
+
