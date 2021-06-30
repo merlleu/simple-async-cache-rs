@@ -18,6 +18,9 @@ pub struct AsyncCacheStore<K, V> {
 impl<K: 'static + Eq + Hash + Debug + Sync + Send + Clone, V: 'static + Sync + Send>
     AsyncCacheStore<K, V>
 {
+    /// 
+    /// 
+    /// 
     pub fn new(expire: u64) -> Arc<Self> {
         let a = Arc::new(AsyncCacheStore {
             inner: Mutex::new(InnerCacheLayer {
