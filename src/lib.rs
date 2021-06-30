@@ -25,22 +25,14 @@ impl<K: 'static + Eq + Hash + Debug + Sync + Send + Clone, V: 'static + Sync + S
     /// If you set expire to less than 3 seconds. 
     /// This limitaion exists because we expire value only every seconds, meaning there could be desynchronizations with a TTL lower than 3.
     /// 
-    /// 
-    /// 
     /// ```rust
     /// use simple_async_cache_rs::AsyncCacheStore;
-    /// 
-    /// 
-    /// 
+    ///
     /// #[tokio::main]
     /// async fn main() {
     ///     let cache_ttl = 60; // number of seconds before the cached item is expired.
     ///     let store: AsyncCacheStore<u64, String> = AsyncCacheStore::new(cache_ttl);
-    ///     
-    /// 
     /// }
-    /// 
-    /// 
     /// ```
     pub fn new(expire: u64) -> Arc<Self> {
         if expire < 3 {
