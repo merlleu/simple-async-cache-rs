@@ -119,4 +119,10 @@ impl<K: 'static + Eq + Hash + Debug + Sync + Send + Clone, V: 'static + Sync + S
 
         val
     }
+
+    /// Expire immediatly the an item from the cache.
+    pub async fn expire(&self, key: &K) {
+        let mut lock = self.inner.lock().await;
+        lock.map.remove(key);
+    }
 }
