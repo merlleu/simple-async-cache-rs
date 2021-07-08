@@ -90,7 +90,7 @@ impl<K: 'static + Eq + Hash + Debug + Sync + Send + Clone, V: 'static + Sync + S
     ///     }
     ///     None => {
     ///         // There is no existing entry for key_1, you can do any expansive task to get the value and store it then.
-    ///         *result = Some("This is the content for key_1.");
+    ///         *result = Some("This is the content for key_1.".to_string());
     ///     }
     /// }
     /// ```
