@@ -1,6 +1,6 @@
 [package]
 name = "simple-async-cache-rs"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["merlleu <mrerl@warlegend.net>"]
 edition = "2018"
 include = [
@@ -15,7 +15,4 @@ license = "MIT"
 
 [dependencies]
 tokio = {version = "1", features=["sync", "time", "rt"]}
-
-[dev.dependencies]
-tokio = {version = "1", features = ["full"]}
 

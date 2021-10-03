@@ -6,12 +6,12 @@ use tokio::time::sleep;
 #[tokio::main]
 async fn main() {
     // Create an AsyncCacheStore using implicit typing with an expiration delay of 10 seconds.
-    let mut store = AsyncCacheStore::new(10);
+    let store = AsyncCacheStore::new();
 
     // If you want to explicitly define types you can do the following:
     // let mut store: Arc<AsyncCacheStore<String, String>> = AsyncCacheStore::new(60);
 
-    let cache = store.get("key_1".to_string()).await;
+    let cache = store.get("key_1".to_string(), 10).await;
     let mut result = cache.lock().await;
     match &mut *result {
         Some(_d) => {
@@ -26,7 +26,7 @@ async fn main() {
 
     // The value for key_1 is still cached.
     assert_eq!(
-        *store.get("key_1".to_string()).await.lock().await,
+        *store.get("key_1".to_string(), 0).await.lock().await,
         Some("This is the first value for key_1.")
     );
 
@@ -34,7 +34,7 @@ async fn main() {
     sleep(Duration::from_secs(15)).await;
 
     assert_eq!(
-        *store.get("key_1".to_string()).await.lock().await,
+        *store.get("key_1".to_string(), 0).await.lock().await,
         None
     );
 }

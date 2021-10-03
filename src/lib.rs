@@ -2,9 +2,8 @@ use std::collections::HashMap;
 use std::fmt::Debug;
 use std::hash::Hash;
 use std::sync::Arc;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{SystemTime, UNIX_EPOCH};
 use tokio::sync::Mutex;
-use tokio::time::sleep;
 
 struct InnerCacheLayer<K, V> {
     pub map: HashMap<K, Arc<Mutex<Option<V>>>>,
@@ -31,14 +30,10 @@ impl<K: 'static + Eq + Hash + Debug + Sync + Send + Clone, V: 'static + Sync + S
     /// #[tokio::main]
     /// async fn main() {
     ///     let cache_ttl = 60; // number of seconds before the cached item is expired.
-    ///     let store: AsyncCacheStore<u64, String> = AsyncCacheStore::new(cache_ttl);
+    ///     let store: AsyncCacheStore<u64, String> = AsyncCacheStore::new();
     /// }
     /// ```
-    pub fn new(expire: u64) -> Arc<Self> {
-        if expire < 3 {
-            panic!("'expire' shouldn't be lower than 3.")
-        }
-
+    pub fn new() -> Arc<Self> {
         let a = Arc::new(AsyncCacheStore {
             inner: Mutex::new(InnerCacheLayer {
                 map: HashMap::new(),
@@ -51,17 +46,18 @@ impl<K: 'static + Eq + Hash + Debug + Sync + Send + Clone, V: 'static + Sync + S
             .unwrap()
             .as_secs()
             - 1;
+        
+        let mut timer = tokio::time::interval(tokio::time::Duration::from_secs(1));
+        
         tokio::spawn(async move {
             let mut n = first_refresh;
             loop {
-                let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis() as u64;
-                if (n + expire) * 1000 < now {
-                    sleep(Duration::from_secs(1)).await;
-                    continue;
-                }
-                sleep(Duration::from_millis((n + expire) * 1000 - now)).await;
-
+                timer.tick().await;
                 let mut lock = cloned.inner.lock().await;
+                println!("{} {}", SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_secs(), n);
                 match lock.expiration_map.remove(&n) {
                     Some(expired) => {
                         for item in expired {
@@ -77,12 +73,12 @@ impl<K: 'static + Eq + Hash + Debug + Sync + Send + Clone, V: 'static + Sync + S
     }
 
 
-    /// Fetch the key from the cache.
+    /// Fetch the key from the cache or creates with the supplied TTL in seconds.
     /// Returns an [`std::sync::Arc`] to the [`tokio::sync::Mutex`] for the key containing an Option.
     /// The [`tokio::sync::Mutex`] prevents DogPile effect.
     /// 
     /// ```rust
-    /// let cache = store.get("key_1".to_string()).await;
+    /// let cache = store.get("key_1".to_string(), 10).await;
     /// let mut result = cache.lock().await;
     /// match &mut *result {
     ///     Some(val) => {
@@ -94,30 +90,39 @@ impl<K: 'static + Eq + Hash + Debug + Sync + Send + Clone, V: 'static + Sync + S
     ///     }
     /// }
     /// ```
-    pub async fn get(&self, key: K) -> Arc<Mutex<Option<V>>> {
+    pub async fn get(&self, key: K, ttl: u64) -> Arc<Mutex<Option<V>>> {
         let mut lock = self.inner.lock().await;
-        let val = match lock.map.get(&key) {
+        match lock.map.get(&key) {
             Some(v) => v.clone(),
             None => {
                 let v = Arc::new(Mutex::new(None));
                 lock.map.insert(key.clone(), v.clone());
-                let current_time = SystemTime::now()
-                    .duration_since(UNIX_EPOCH)
-                    .unwrap()
-                    .as_secs();
-                match lock.expiration_map.get_mut(&current_time) {
-                    Some(arr) => {
-                        arr.push(key);
-                    }
-                    None => {
-                        lock.expiration_map.insert(current_time, vec![key]);
-                    }
-                }
+                lock.expiration_map.entry(SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_secs() + ttl).or_default().push(key);
+                
                 v
             }
-        };
+        }
+    }
 
-        val
+
+
+    pub async fn exists(&self, key: K) -> bool {
+        let lock = self.inner.lock().await;
+        lock.map.get(&key).is_some()
+    }
+
+
+    pub async fn ready(&self, key: K) -> bool {
+        let lock = self.inner.lock().await;
+        match lock.map.get(&key) {
+            Some(v) => v.lock().await.is_some(),
+            None => {
+                false
+            }
+        }
     }
 
     /// Expire immediatly the an item from the cache.
