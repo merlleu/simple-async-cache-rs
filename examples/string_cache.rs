@@ -2,7 +2,6 @@ use simple_async_cache_rs::AsyncCacheStore;
 use std::time::Duration;
 use tokio::time::sleep;
 
-
 #[tokio::main]
 async fn main() {
     // Create an AsyncCacheStore using implicit typing with an expiration delay of 10 seconds.
@@ -33,8 +32,5 @@ async fn main() {
     // We sleep for 15 seconds, the value for key_1 is expired.
     sleep(Duration::from_secs(15)).await;
 
-    assert_eq!(
-        *store.get("key_1".to_string(), 0).await.lock().await,
-        None
-    );
+    assert_eq!(*store.get("key_1".to_string(), 0).await.lock().await, None);
 }

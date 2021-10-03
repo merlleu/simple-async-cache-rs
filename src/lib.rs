@@ -19,11 +19,11 @@ impl<K: 'static + Eq + Hash + Debug + Sync + Send + Clone, V: 'static + Sync + S
 {
     /// Construct a new [`AsyncCacheStore`] instance.
     /// Note: expire is the number of seconds for the cached value to expire.
-    /// 
+    ///
     /// **Panic**:
-    /// If you set expire to less than 3 seconds. 
+    /// If you set expire to less than 3 seconds.
     /// This limitaion exists because we expire value only every seconds, meaning there could be desynchronizations with a TTL lower than 3.
-    /// 
+    ///
     /// ```rust
     /// use simple_async_cache_rs::AsyncCacheStore;
     ///
@@ -46,18 +46,22 @@ impl<K: 'static + Eq + Hash + Debug + Sync + Send + Clone, V: 'static + Sync + S
             .unwrap()
             .as_secs()
             - 1;
-        
+
         let mut timer = tokio::time::interval(tokio::time::Duration::from_secs(1));
-        
+
         tokio::spawn(async move {
             let mut n = first_refresh;
             loop {
                 timer.tick().await;
                 let mut lock = cloned.inner.lock().await;
-                println!("{} {}", SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .unwrap()
-                .as_secs(), n);
+                println!(
+                    "{} {}",
+                    SystemTime::now()
+                        .duration_since(UNIX_EPOCH)
+                        .unwrap()
+                        .as_secs(),
+                    n
+                );
                 match lock.expiration_map.remove(&n) {
                     Some(expired) => {
                         for item in expired {
@@ -72,11 +76,10 @@ impl<K: 'static + Eq + Hash + Debug + Sync + Send + Clone, V: 'static + Sync + S
         a
     }
 
-
     /// Fetch the key from the cache or creates with the supplied TTL in seconds.
     /// Returns an [`std::sync::Arc`] to the [`tokio::sync::Mutex`] for the key containing an Option.
     /// The [`tokio::sync::Mutex`] prevents DogPile effect.
-    /// 
+    ///
     /// ```rust
     /// let cache = store.get("key_1".to_string(), 10).await;
     /// let mut result = cache.lock().await;
@@ -97,31 +100,32 @@ impl<K: 'static + Eq + Hash + Debug + Sync + Send + Clone, V: 'static + Sync + S
             None => {
                 let v = Arc::new(Mutex::new(None));
                 lock.map.insert(key.clone(), v.clone());
-                lock.expiration_map.entry(SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .unwrap()
-                .as_secs() + ttl).or_default().push(key);
-                
+                lock.expiration_map
+                    .entry(
+                        SystemTime::now()
+                            .duration_since(UNIX_EPOCH)
+                            .unwrap()
+                            .as_secs()
+                            + ttl,
+                    )
+                    .or_default()
+                    .push(key);
+
                 v
             }
         }
     }
-
-
 
     pub async fn exists(&self, key: K) -> bool {
         let lock = self.inner.lock().await;
         lock.map.get(&key).is_some()
     }
 
-
     pub async fn ready(&self, key: K) -> bool {
         let lock = self.inner.lock().await;
         match lock.map.get(&key) {
             Some(v) => v.lock().await.is_some(),
-            None => {
-                false
-            }
+            None => false,
         }
     }
 
