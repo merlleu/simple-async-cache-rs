@@ -54,14 +54,6 @@ impl<K: 'static + Eq + Hash + Debug + Sync + Send + Clone, V: 'static + Sync + S
             loop {
                 timer.tick().await;
                 let mut lock = cloned.inner.lock().await;
-                println!(
-                    "{} {}",
-                    SystemTime::now()
-                        .duration_since(UNIX_EPOCH)
-                        .unwrap()
-                        .as_secs(),
-                    n
-                );
                 match lock.expiration_map.remove(&n) {
                     Some(expired) => {
                         for item in expired {

@@ -1,6 +1,6 @@
 [package]
 name = "simple-async-cache-rs"
-version = "0.3.0"
+version = "0.3.1"
 authors = ["merlleu <mrerl@warlegend.net>"]
 edition = "2018"
 include = [
