@@ -126,4 +126,9 @@ impl<K: 'static + Eq + Hash + Debug + Sync + Send + Clone, V: 'static + Sync + S
         let mut lock = self.inner.lock().await;
         lock.map.remove(key);
     }
+
+    pub async fn clone_inner_map(&self) -> HashMap<K, Arc<Mutex<Option<V>>>> {
+        let mut lock = self.inner.lock().await;
+        lock.map.clone()
+    }
 }
