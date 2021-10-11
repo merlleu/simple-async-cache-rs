@@ -127,8 +127,12 @@ impl<K: 'static + Eq + Hash + Debug + Sync + Send + Clone, V: 'static + Sync + S
         lock.map.remove(key);
     }
 
-    pub async fn clone_inner_map(&self) -> HashMap<K, Arc<Mutex<Option<V>>>> {
-        let mut lock = self.inner.lock().await;
-        lock.map.clone()
+    pub async fn clone_inner_map(&self) -> HashMap<K, Option<V>> where V: Clone {
+        let lock = self.inner.lock().await;
+        let mut hm = HashMap::new();
+        for (k, v) in lock.map.iter() {
+            hm.insert(k.clone(), v.lock().await.clone());
+        }
+        hm
     }
 }
